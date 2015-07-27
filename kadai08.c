@@ -57,51 +57,91 @@ int getlist(int list[]){
 /*ソーティング本体*/
 /*引数として配列と2つの整数startとendをとる。与えられた配列のstart番の要素からend番の要素の間に挿入ソートを適用する。*/
 void soating(int array[],int start,int end){
-  if(start == end){
+  int temp_array;/*要素を入れ替える際に必要となる空間*/
+  int piv;
+  piv = array[start];/*ピボットの選択*/
+  int left_i = start;
+  int left_need_to_change = 0;
+  int right_i = end;
+  int right_need_to_change = 0;
+  /*配列の要素数が1個の時*/
+  if(end == start){
     ;
   }
+  /*配列の要素数が２個以上の時*/
   else{
-    int piv;
-    piv = array[0];/*ピボットの選択*/
-    int left_i = start;
-    int left_change = start;
-    int right_i = end;
-    int right_change = end;
-    int temp_array;/*要素を入れ替える際に必要となる空間*/
-    while(left_i < right_i){
-      /*１ ピボット以上の数値を配列先頭から検索*/
-      while(left_i <= end+1){
-	if(piv <= array[left_i]){
-	  left_change = left_i;
+    /*left_iを左から動かしてピボットとなる数以上の要素を探していく。見つかれば今度は左端からright_iを動かしてピボットとなる数未満の要素を探していく。２つともが見つかりペアができればそれらを交換してそこから再びペアを探し始める。*/
+    /*以降のソーティングでポイントとなっているのはleft_iとright_iが隣り合った位置に来るまで交換可能なペアを探査していくのだが、２つが隣り合う位置に来た時に各ループを脱出するような仕様にしているのでループを脱出した辞典で再びleft_iとright_iが指す要素が交換可能かどうかを調べる必要がある。*/
+    /*そうやって確認した結果、また新たに交換可能なペアが出来る場合は交換すれば良い。しかし更に複雑なのは、left_iもしくはright_i番の要素は最初に探査を行った時の条件に適する要素であるにもかかわらずもう一方がそうでない場合である。これらの場合については別個に考える必要が有るため一番外側のwhile文を抜けた"<--------------"で示す場所で考慮してある。*/
+    /*ただしこのwhile文はソートする配列の要素数が２個の時はスキップされる。*/
+    while(left_i+1<right_i){
+      /*見つかった場合*/
+      if(piv <= array[left_i]){
+	while(left_i+1<right_i){
+	  if(piv > array[right_i]){
+	    /*交換するペアが見つかった場合*/
+	    temp_array = array[left_i];
+	    array[left_i] = array[right_i];
+	    array[right_i] = temp_array;
+	    break; 
+	  }
+	  else{
+	    right_i--;
+	  }
+	}
+      }
+      /*見つからなかった場合*/
+      else{
+	if(left_i+1 == right_i){
 	  break;
 	}
 	else{
-	left_i++;
+	  left_i++;
 	}
       }
-      /*２ ピボット未満の数値を配列末尾から検索*/
-      while(right_i <= end+1){
-	if(piv > array[right_i]){
-	right_change = right_i;
-	break;
+    }
+    //   <--------------    この関数の暴徒のコメントで述べたのがここからのコードである。
+    /*left_i、right_i番の要素を要素をそれぞれピボットと照らし合わせる。条件に適する場合は用意した0-1変数、left_need_to_change、right_need_to_changeの値が1になる。*/
+    /*array[left_i]を確認*/
+    if(piv <= array[left_i]){
+      left_need_to_change = 1;
+    }
+    /*array[right_i]を確認*/ 
+    if(piv > array[right_i]){
+      right_need_to_change = 1;
+    }
+    if(left_need_to_change == 1 && right_need_to_change == 1){
+      temp_array = array[left_i];
+      array[left_i] = array[right_i];
+      array[right_i] = temp_array;
+    }
+    /*ソートする配列の要素数が２個の時はここで終了。*/
+    if(start+1 < end){
+      if(left_need_to_change == 1 && right_need_to_change == 0){
+	if(left_i == start){//left_iはstart異常でなければならないので
+	  ;
 	}
 	else{
+	  left_i--;
 	  right_i--;
 	}
       }
-    if(left_i >= right_i){
-      break;
+      if(left_need_to_change == 0 && right_need_to_change == 1){
+	if(right_i == end){//right_iはend以下でなければならないので
+	  left_i++;
+	  right_i++;
+	}
+	else{
+	  ;
+	}
+      }
+      /* 左右にわかれた配列のそれぞれで同様のアルゴリズムを再帰的に適用する*/
+      soating(array,start,left_i);
+      soating(array,right_i,end);
     }
-    /*３ それぞれを交換する*/
-    temp_array = array[left_change];
-    array[left_change] = array[right_change];
-    array[right_change] = temp_array;
-    /*インクリメント、デクリメント*/
-    left_i++;
-    right_i--;
+    else{
+      ;
     }
-    soating(array,start,left_change);
-    soating(array,left_change+1,end);
   }
 }
 /*//////////////////////////////////////////////////////*/
@@ -132,8 +172,7 @@ int main(void)
 {
   int array[MAXELEMENT];
   int arraysize = getlist(array);
-  print_list(array,arraysize);
-  printf("この配列にクイックソートを適用します。");
+  printf("この配列に昇順のクイックソートを適用します。\n");
   soating(array,0,arraysize-1);
   print_list(array,arraysize);
   return 0;
